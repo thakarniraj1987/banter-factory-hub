@@ -8,14 +8,14 @@ interface ChatBotProps {
   initialMessage?: string;
 }
 
-const ChatBot: React.FC<ChatBotProps> = ({ initialMessage = "Hi there! How can I help you today?" }) => {
+const ChatBot: React.FC<ChatBotProps> = ({ initialMessage = "Hello! I'm OpsBuddy, your intelligent incident resolution assistant. How can I help you today?" }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // Add the initial bot message when component mounts
-    const botMessage = createMessage(initialMessage, 'bot');
+    const botMessage = createMessage(initialMessage, 'bot', 'info');
     setMessages([botMessage]);
   }, [initialMessage]);
 
@@ -35,9 +35,9 @@ const ChatBot: React.FC<ChatBotProps> = ({ initialMessage = "Hi there! How can I
     generateResponse(
       content,
       () => setIsTyping(true),
-      (response) => {
+      (response, severity) => {
         setIsTyping(false);
-        const botMessage = createMessage(response, 'bot');
+        const botMessage = createMessage(response, 'bot', severity);
         setMessages(prev => [...prev, botMessage]);
       }
     );
