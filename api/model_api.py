@@ -3,8 +3,10 @@ import ollama
 import re
 from typing import Dict, Tuple, Optional, List
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 
 CONFIG = {
     "servicenow_file": "servicenow_inc.json",
