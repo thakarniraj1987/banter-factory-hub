@@ -1,0 +1,75 @@
+
+[
+  {
+    "ci": "WEB-PROD-01",
+    "type": "Server",
+    "environment": "Production",
+    "upstream": [
+      {
+        "ci": "LOAD-BAL-01",
+        "type": "Load Balancer",
+        "relationship": "Receives traffic from"
+      },
+      {
+        "ci": "CDN-EDGE-02",
+        "type": "CDN",
+        "relationship": "Caches content from"
+      }
+    ],
+    "downstream": [
+      {
+        "ci": "APP-PROD-02",
+        "type": "Application Server",
+        "relationship": "Forwards requests to"
+      },
+      {
+        "ci": "DB-PROD-03",
+        "type": "Database",
+        "relationship": "Stores data in"
+      }
+    ]
+  },
+  {
+    "ci": "DB-PROD-03",
+    "type": "Database",
+    "environment": "Production",
+    "upstream": [
+      {
+        "ci": "APP-PROD-02",
+        "type": "Application Server",
+        "relationship": "Receives queries from"
+      },
+      {
+        "ci": "WEB-PROD-01",
+        "type": "Web Server",
+        "relationship": "Receives direct queries from"
+      }
+    ],
+    "downstream": [
+      {
+        "ci": "STORAGE-NAS-01",
+        "type": "Storage",
+        "relationship": "Stores backups on"
+      }
+    ]
+  },
+  {
+    "ci": "PAYMENT-GW-01",
+    "type": "Gateway",
+    "environment": "Production",
+    "upstream": [
+      {
+        "ci": "APP-PROD-02",
+        "type": "Application Server",
+        "relationship": "Receives payment requests from"
+      }
+    ],
+    "downstream": [
+      {
+        "ci": "PAYMENT-PROC-EXT",
+        "type": "External Service",
+        "relationship": "Forwards transactions to"
+      }
+    ]
+  }
+]

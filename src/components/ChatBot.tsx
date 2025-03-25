@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { toast } from 'sonner';
+import BackendStatus from './BackendStatus';
 
 interface ChatBotProps {
   initialMessage?: string;
@@ -77,6 +78,10 @@ const ChatBot: React.FC<ChatBotProps> = ({ initialMessage = "Hello! I'm OpsBuddy
 
   return (
     <div className="chatbot-container h-[600px] md:h-[70vh]">
+      <div className="flex justify-end mb-2">
+        <BackendStatus />
+      </div>
+      
       <div className="chatbot-messages flex-1 overflow-y-auto" style={{ scrollBehavior: 'smooth' }}>
         {messages.map((message) => (
           <ChatMessage key={message.id} message={message} />

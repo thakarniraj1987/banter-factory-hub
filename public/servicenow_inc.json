@@ -1,0 +1,46 @@
+
+[
+  {
+    "id": "INC0001",
+    "short_description": "Web application outage on production server",
+    "description": "The main customer portal is down. Users report 503 errors when trying to access the application. Initial investigation shows the web server is running but not responding to HTTP requests.",
+    "status": "In Progress",
+    "priority": "1-Critical",
+    "category": "Infrastructure",
+    "subcategory": "Server",
+    "affected_ci": "WEB-PROD-01",
+    "affected_service": "Customer Portal",
+    "assigned_individual": "John Smith",
+    "created_at": "2023-06-15T08:30:00Z",
+    "updated_at": "2023-06-15T09:15:00Z"
+  },
+  {
+    "id": "INC0002",
+    "short_description": "Database connection failures",
+    "description": "Applications are experiencing intermittent database connection failures. Error logs show timeout exceptions when connecting to the primary database cluster.",
+    "status": "Open",
+    "priority": "2-High",
+    "category": "Database",
+    "subcategory": "Connectivity",
+    "affected_ci": "DB-PROD-03",
+    "affected_service": "Core Database",
+    "assigned_individual": "Jane Doe",
+    "created_at": "2023-06-14T14:22:00Z",
+    "updated_at": "2023-06-14T15:10:00Z"
+  },
+  {
+    "id": "INC0003",
+    "short_description": "SSL certificate expired",
+    "description": "The SSL certificate for the payment processing gateway has expired, causing secure transactions to fail. Users are receiving security warnings in their browsers.",
+    "status": "Resolved",
+    "priority": "2-High",
+    "category": "Security",
+    "subcategory": "Certificates",
+    "affected_ci": "PAYMENT-GW-01",
+    "affected_service": "Payment Processing",
+    "assigned_individual": "Mike Johnson",
+    "created_at": "2023-06-10T09:45:00Z",
+    "updated_at": "2023-06-10T13:20:00Z",
+    "resolution_notes": "Renewed SSL certificate and deployed to the affected servers. Verified secure connections are working properly."
+  }
+]

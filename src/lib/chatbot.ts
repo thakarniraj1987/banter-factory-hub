@@ -1,68 +1,7 @@
+
 import { Message } from '@/components/ChatMessage';
-import incidentData from '@/data/incidents.json';
 import OpenAI from 'openai';
-
-// Search incidents by various criteria
-export const searchIncidents = (query: string) => {
-  const normalizedQuery = query.toLowerCase();
-  
-  return incidentData.filter(incident => 
-    incident.id.toLowerCase().includes(normalizedQuery) ||
-    incident.short_description.toLowerCase().includes(normalizedQuery) ||
-    incident.description.toLowerCase().includes(normalizedQuery) ||
-    incident.status.toLowerCase().includes(normalizedQuery) ||
-    incident.priority.toLowerCase().includes(normalizedQuery) ||
-    incident.category.toLowerCase().includes(normalizedQuery) ||
-    incident.subcategory.toLowerCase().includes(normalizedQuery) ||
-    incident.affected_service.toLowerCase().includes(normalizedQuery) ||
-    (incident.assigned_individual && incident.assigned_individual.toLowerCase().includes(normalizedQuery))
-  );
-};
-
-// Get incident details by ID
-export const getIncidentById = (id: string) => {
-  return incidentData.find(incident => incident.id === id);
-};
-
-// Format incident details as a readable message
-export const formatIncidentDetails = (incident: any): { content: string; severity: 'info' | 'warning' | 'critical' | 'resolved' } => {
-  if (!incident) return { 
-    content: "Incident not found.",
-    severity: "info"
-  };
-  
-  const formattedTimestamp = new Date(incident.created_at).toLocaleString();
-  const updatedTimestamp = new Date(incident.updated_at).toLocaleString();
-  
-  let severityLevel: 'info' | 'warning' | 'critical' | 'resolved' = 'info';
-  
-  if (incident.status === 'Resolved') {
-    severityLevel = 'resolved';
-  } else if (incident.priority === '1-Critical') {
-    severityLevel = 'critical';
-  } else if (incident.priority === '2-High') {
-    severityLevel = 'warning';
-  }
-  
-  return {
-    content: `
-Incident ${incident.id}
-Description: ${incident.short_description}
-Status: ${incident.status}
-Priority: ${incident.priority}
-Category: ${incident.category} / ${incident.subcategory}
-Affected Service: ${incident.affected_service}
-Created: ${formattedTimestamp}
-Updated: ${updatedTimestamp}
-${incident.assigned_individual ? `Assigned to: ${incident.assigned_individual}` : 'Unassigned'}
-
-${incident.description}
-
-${incident.resolution_notes ? `Resolution: ${incident.resolution_notes}` : ''}
-    `.trim(),
-    severity: severityLevel
-  };
-};
+import { sendQuery, formatApiResponse } from './api';
 
 // Initialize OpenAI client - in production, use environment variables for the API key
 let openai: OpenAI | null = null;
@@ -141,7 +80,21 @@ const generateAIAnalysis = async (context: string): Promise<{ content: string; s
   };
 };
 
-// Simulating a response delay
+// Process user query through backend API
+const processQueryWithBackend = async (userMessage: string) => {
+  try {
+    const apiResponse = await sendQuery(userMessage);
+    return formatApiResponse(apiResponse);
+  } catch (error) {
+    console.error('Error processing query with backend:', error);
+    return {
+      content: "I'm sorry, I couldn't connect to the backend service. Please try again later or try using the OpenAI-powered analysis instead.",
+      severity: 'warning' as 'info' | 'warning' | 'critical' | 'resolved'
+    };
+  }
+};
+
+// Generate a response to the user's message
 export const generateResponse = async (
   userMessage: string, 
   onTypingStart: () => void, 
@@ -171,106 +124,32 @@ export const generateResponse = async (
     }
   }
   
-  // Check for incident related queries
-  const lowerCaseMessage = userMessage.toLowerCase();
-  
   // Simulate thinking time
   setTimeout(async () => {
-    // Handle incident ID lookup
-    if (lowerCaseMessage.includes('incident') && /inc\d+/i.test(userMessage)) {
-      const incidentId = userMessage.match(/inc\d+/i)?.[0].toUpperCase();
-      if (incidentId) {
-        const incident = getIncidentById(incidentId);
-        if (incident) {
-          const formattedIncident = formatIncidentDetails(incident);
-          const typingDelay = Math.min(1500, formattedIncident.content.length * 10);
-          
-          setTimeout(() => {
-            onResponseReady(formattedIncident.content, formattedIncident.severity);
-          }, typingDelay);
-          return;
-        }
-      }
-    }
-    
-    // Handle incident search
-    if (
-      lowerCaseMessage.includes('find incident') || 
-      lowerCaseMessage.includes('search incident') || 
-      lowerCaseMessage.includes('show incident') ||
-      lowerCaseMessage.includes('incidents with') ||
-      lowerCaseMessage.includes('incidents related')
-    ) {
-      const searchTerm = userMessage.replace(/find|search|show|incidents with|incidents related|incident|incidents/gi, '').trim();
-      if (searchTerm.length > 2) {
-        const results = searchIncidents(searchTerm);
-        
-        if (results.length > 0) {
-          const response = `I found ${results.length} incidents matching "${searchTerm}":\n\n` + 
-            results.map(inc => `- ${inc.id}: ${inc.short_description} (${inc.status})`).join('\n');
-          
-          setTimeout(() => {
-            onResponseReady(response, 'info');
-          }, 1500);
-          return;
-        } else {
-          setTimeout(() => {
-            onResponseReady(`I couldn't find any incidents matching "${searchTerm}".`, 'info');
-          }, 1000);
-          return;
-        }
-      }
-    }
-    
-    // Handle general status request
-    if (
-      lowerCaseMessage.includes('incident status') || 
-      lowerCaseMessage.includes('open incidents') ||
-      lowerCaseMessage.includes('critical incidents')
-    ) {
-      const openIncidents = incidentData.filter(inc => inc.status !== 'Resolved');
-      const criticalIncidents = incidentData.filter(inc => inc.priority === '1-Critical');
-      
-      let response = `Current Incident Status:\n`;
-      response += `- Total incidents: ${incidentData.length}\n`;
-      response += `- Open incidents: ${openIncidents.length}\n`;
-      response += `- Critical incidents: ${criticalIncidents.length}\n\n`;
-      
-      if (criticalIncidents.length > 0) {
-        response += `Critical incidents:\n`;
-        criticalIncidents.forEach(inc => {
-          response += `- ${inc.id}: ${inc.short_description}\n`;
-        });
-        
-        setTimeout(() => {
-          onResponseReady(response, 'warning');
-        }, 1500);
-        return;
-      } else {
-        response += `No critical incidents at this time.`;
-        
-        setTimeout(() => {
-          onResponseReady(response, 'info');
-        }, 1500);
-        return;
-      }
-    }
-    
     try {
-      // Generate AI analysis for the user message
-      const aiAnalysis = await generateAIAnalysis(userMessage);
+      // First try to process the query with the backend
+      const backendResponse = await processQueryWithBackend(userMessage);
       
-      // Simulate thinking/typing time based on response length
-      const typingDelay = Math.min(2000, aiAnalysis.content.length * 5);
-      
+      // Simulate thinking/typing time
       setTimeout(() => {
-        onResponseReady(aiAnalysis.content, aiAnalysis.severity);
-      }, typingDelay);
+        onResponseReady(backendResponse.content, backendResponse.severity);
+      }, 1500);
     } catch (error) {
-      console.error('Error in generateResponse:', error);
-      setTimeout(() => {
-        onResponseReady("I'm sorry, I encountered an error while processing your request. Please try again later.", 'warning');
-      }, 1000);
+      console.error('Error in backend processing, falling back to OpenAI:', error);
+      
+      try {
+        // If backend fails, fallback to OpenAI
+        const aiAnalysis = await generateAIAnalysis(userMessage);
+        
+        setTimeout(() => {
+          onResponseReady(aiAnalysis.content, aiAnalysis.severity);
+        }, 1500);
+      } catch (aiError) {
+        console.error('Error in AI fallback:', aiError);
+        setTimeout(() => {
+          onResponseReady("I'm sorry, I encountered an error while processing your request. Please try again later.", 'warning');
+        }, 1000);
+      }
     }
   }, 1000);
 };

@@ -1,0 +1,30 @@
+
+[
+  {
+    "ci": "WEB-PROD-01",
+    "status": "Critical",
+    "cpu_usage": "92%",
+    "memory_usage": "87%",
+    "disk_usage": "65%",
+    "updates": "CPU usage spiked 30 minutes ago. Memory consumption is steadily increasing.",
+    "last_updated": "2023-06-15T09:10:00Z"
+  },
+  {
+    "ci": "DB-PROD-03",
+    "status": "Warning",
+    "cpu_usage": "64%",
+    "memory_usage": "72%",
+    "disk_usage": "88%",
+    "updates": "Disk usage approaching critical threshold. Slow query count increased by 25% in the last hour.",
+    "last_updated": "2023-06-14T15:05:00Z"
+  },
+  {
+    "ci": "PAYMENT-GW-01",
+    "status": "Healthy",
+    "cpu_usage": "34%",
+    "memory_usage": "42%",
+    "disk_usage": "45%",
+    "updates": "System stable after certificate renewal. Performance metrics normal.",
+    "last_updated": "2023-06-10T13:15:00Z"
+  }
+]
