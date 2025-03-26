@@ -58,7 +58,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isAnimated = true })
       
       if (incidents.length > 0) {
         return (
-          <>
+          <div>
             <p className="mb-2">{titleLine}</p>
             <div className="border rounded overflow-hidden">
               <Table>
@@ -90,7 +90,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isAnimated = true })
                 </TableBody>
               </Table>
             </div>
-          </>
+          </div>
         );
       }
     }
@@ -100,7 +100,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isAnimated = true })
       const sections = content.split('\n\n');
       
       return (
-        <>
+        <div>
           {sections.map((section, idx) => {
             if (section.includes('Dependencies for') && (section.includes('Upstream') || section.includes('Downstream'))) {
               const [title, ...dependencies] = section.split('\n');
@@ -158,17 +158,21 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isAnimated = true })
               return <p key={idx} className="mb-2">{section}</p>;
             }
           })}
-        </>
+        </div>
       );
     }
     
     // Default formatting - split by line breaks for better readability
-    return content.split('\n').map((line, index) => (
-      <React.Fragment key={index}>
-        {line}
-        {index < content.split('\n').length - 1 && <br />}
-      </React.Fragment>
-    ));
+    return (
+      <div>
+        {content.split('\n').map((line, index) => (
+          <React.Fragment key={index}>
+            {line}
+            {index < content.split('\n').length - 1 && <br />}
+          </React.Fragment>
+        ))}
+      </div>
+    );
   };
   
   return (
