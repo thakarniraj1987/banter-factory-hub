@@ -52,6 +52,20 @@ export const formatApiResponse = (apiResponse: QueryResponse): { content: string
     content = response.message;
   }
 
+  // List Open Incidents with CI Health
+  if (intent === 'List Open Incidents with CI Health' && response.incidents) {
+    // For modern UI rendering in the ChatMessage component, we'll pass this as JSON
+    if (response.incidents.some((inc: any) => inc.ci_health === 'Critical')) {
+      severity = 'critical';
+    } else if (response.incidents.some((inc: any) => inc.ci_health === 'Degraded' || inc.ci_health === 'Warning')) {
+      severity = 'warning';
+    }
+    
+    // Just stringify the response object for the enhanced table renderer
+    content = JSON.stringify(response);
+    return { content, severity };
+  }
+
   // Incident status inquiry
   if (intent === 'Incident Status Inquiry' && response.incident_id) {
     severity = response.status === 'Resolved' ? 'resolved' : 
@@ -87,9 +101,9 @@ export const formatApiResponse = (apiResponse: QueryResponse): { content: string
     }
   }
 
-  // List of incidents
-  if (intent === 'Incident Status Inquiry' && response.incidents) {
-    content = response.message + '\n\n';
+  // List of incidents (older format)
+  if (intent === 'Incident Status Inquiry' && response.incidents && !response.incidents[0]?.ci_health) {
+    content = response.message + '\n';
     response.incidents.forEach((inc: any) => {
       content += `- ${inc.id}: ${inc.short_description} (${inc.status})\n`;
     });
@@ -99,7 +113,7 @@ export const formatApiResponse = (apiResponse: QueryResponse): { content: string
   if (intent === 'CI Health Check' && response.ci) {
     severity = response.health_status === 'Healthy' ? 'resolved' : 
                response.health_status === 'Critical' ? 'critical' : 
-               response.health_status === 'Warning' ? 'warning' : 'info';
+               response.health_status === 'Warning' || response.health_status === 'Degraded' ? 'warning' : 'info';
     
     content = `${response.prefix}: ${response.ci}\n`;
     content += `- Health Status: ${response.health_status}\n`;
@@ -127,23 +141,6 @@ export const formatApiResponse = (apiResponse: QueryResponse): { content: string
       } else {
         content += `- Downstream: None\n`;
       }
-    }
-  }
-
-  // List Open Incidents with CI Health
-  if (intent === 'List Open Incidents with CI Health' && response.incidents) {
-    content = response.message + '\n\n';
-    response.incidents.forEach((inc: any) => {
-      content += `- Incident ${inc.incident_id} (CI: ${inc.ci})\n`;
-      content += `  - Status: ${inc.status}\n`;
-      content += `  - CI Health: ${inc.ci_health}\n`;
-      content += `  - Details: ${inc.details}\n\n`;
-    });
-    
-    if (response.incidents.some((inc: any) => inc.ci_health === 'Critical')) {
-      severity = 'critical';
-    } else if (response.incidents.some((inc: any) => inc.ci_health === 'Warning')) {
-      severity = 'warning';
     }
   }
 
