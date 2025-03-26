@@ -2,6 +2,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { AlertTriangle, CheckCircle, Info } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 export interface Message {
   id: string;
@@ -34,6 +35,141 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isAnimated = true })
         return <Info className="h-5 w-5 text-blue-500" />;
     }
   };
+
+  // Format the content to enhance readability
+  const formatContent = (content: string) => {
+    // Check if content is a list of incidents
+    if (content.includes('Found') && content.includes('open incidents') && content.includes('INC')) {
+      const lines = content.split('\n');
+      const titleLine = lines[0];
+      
+      // Extract incident information
+      const incidents = lines.slice(1).filter(line => line.trim().startsWith('-')).map(line => {
+        const match = line.trim().replace('- ', '').match(/^(INC\d+): (.*) \((.*)\)$/);
+        if (match) {
+          return {
+            id: match[1],
+            description: match[2],
+            status: match[3]
+          };
+        }
+        return null;
+      }).filter(Boolean);
+      
+      if (incidents.length > 0) {
+        return (
+          <>
+            <p className="mb-2">{titleLine}</p>
+            <div className="border rounded overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[120px]">Incident ID</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead className="w-[120px]">Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {incidents.map((incident, index) => (
+                    <TableRow key={index}>
+                      <TableCell className="font-medium">{incident.id}</TableCell>
+                      <TableCell>{incident.description}</TableCell>
+                      <TableCell>
+                        <span className={cn(
+                          "px-2 py-1 rounded-full text-xs font-medium",
+                          incident.status === "New" && "bg-blue-100 text-blue-800",
+                          incident.status === "In Progress" && "bg-amber-100 text-amber-800",
+                          incident.status === "Resolved" && "bg-green-100 text-green-800",
+                          incident.status === "Critical" && "bg-red-100 text-red-800"
+                        )}>
+                          {incident.status}
+                        </span>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </>
+        );
+      }
+    }
+    
+    // Format CI details with dependencies
+    if (content.includes('Affected CI') || content.includes('Dependencies for')) {
+      const sections = content.split('\n\n');
+      
+      return (
+        <>
+          {sections.map((section, idx) => {
+            if (section.includes('Dependencies for') && (section.includes('Upstream') || section.includes('Downstream'))) {
+              const [title, ...dependencies] = section.split('\n');
+              return (
+                <div key={idx} className="mt-3">
+                  <h4 className="font-medium mb-2">{title}</h4>
+                  <div className="border rounded overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead colSpan={2}>Dependencies</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {dependencies.map((dep, index) => {
+                          // Skip empty lines
+                          if (!dep.trim()) return null;
+                          
+                          const isTitle = dep.trim().startsWith('- ') && !dep.includes('None');
+                          const isItem = dep.trim().startsWith('  - ');
+                          
+                          if (isTitle) {
+                            return (
+                              <TableRow key={`title-${index}`}>
+                                <TableCell colSpan={2} className="font-medium bg-gray-50 dark:bg-gray-800">
+                                  {dep.trim().replace('- ', '')}
+                                </TableCell>
+                              </TableRow>
+                            );
+                          } else if (isItem) {
+                            const parts = dep.trim().replace('  - ', '').split(' (');
+                            const ci = parts[0];
+                            const details = parts.length > 1 ? parts[1].replace(')', '') : '';
+                            
+                            return (
+                              <TableRow key={`item-${index}`}>
+                                <TableCell>{ci}</TableCell>
+                                <TableCell>{details}</TableCell>
+                              </TableRow>
+                            );
+                          } else {
+                            return (
+                              <TableRow key={`line-${index}`}>
+                                <TableCell colSpan={2}>{dep}</TableCell>
+                              </TableRow>
+                            );
+                          }
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+              );
+            } else {
+              return <p key={idx} className="mb-2">{section}</p>;
+            }
+          })}
+        </>
+      );
+    }
+    
+    // Default formatting - split by line breaks for better readability
+    return content.split('\n').map((line, index) => (
+      <React.Fragment key={index}>
+        {line}
+        {index < content.split('\n').length - 1 && <br />}
+      </React.Fragment>
+    ));
+  };
   
   return (
     <div 
@@ -60,7 +196,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isAnimated = true })
           </span>
         </div>
       )}
-      <div className="text-sm md:text-base">{message.content}</div>
+      <div className="text-sm md:text-base overflow-x-auto">{formatContent(message.content)}</div>
       <div className="text-xs mt-1 opacity-70">
         {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
       </div>
