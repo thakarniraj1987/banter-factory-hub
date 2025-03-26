@@ -2,6 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send } from 'lucide-react';
 import VoiceInput from './VoiceInput';
+import { toast } from 'sonner';
 
 interface ChatInputProps {
   onSendMessage: (message: string) => void;
@@ -21,8 +22,36 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, disabled = false }
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (message.trim() && !disabled) {
+      try {
+        // Make API call to the backend
+        const response = await fetch('http://localhost:5000/query', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ query: message }),
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to get response from server');
+        }
+        
+        const data = await response.json();
+        console.log('Backend response:', data);
+      } catch (error) {
+        console.error('Error calling backend API:', error);
+        toast.error('Failed to connect to backend. Using fallback mode.', {
+          duration: 3000,
+          position: 'bottom-right',
+        });
+      }
+      
+      // Pass the message to the parent component
       onSendMessage(message);
+      
+      // Clear the input
       setMessage('');
+      
       // Reset the height of the textarea
       if (inputRef.current) {
         inputRef.current.style.height = 'auto';
