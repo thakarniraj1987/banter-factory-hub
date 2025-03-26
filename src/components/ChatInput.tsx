@@ -1,6 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Send } from 'lucide-react';
+import VoiceInput from './VoiceInput';
 
 interface ChatInputProps {
   onSendMessage: (message: string) => void;
@@ -22,6 +23,10 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, disabled = false }
     if (message.trim() && !disabled) {
       onSendMessage(message);
       setMessage('');
+      // Reset the height of the textarea
+      if (inputRef.current) {
+        inputRef.current.style.height = 'auto';
+      }
     }
   };
 
@@ -42,13 +47,26 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, disabled = false }
     }
   };
 
+  const handleVoiceTranscript = (transcript: string) => {
+    setMessage(transcript);
+    
+    // Wait for state update and then resize the textarea
+    setTimeout(() => {
+      if (inputRef.current) {
+        inputRef.current.style.height = 'auto';
+        inputRef.current.style.height = `${Math.min(inputRef.current.scrollHeight, 150)}px`;
+      }
+    }, 0);
+  };
+
   return (
     <form onSubmit={handleSubmit} className="chatbot-input-container">
-      <div className="relative">
+      <div className="relative flex items-center">
+        <VoiceInput onTranscript={handleVoiceTranscript} disabled={disabled} />
         <textarea
           ref={inputRef}
-          className="chatbot-input resize-none overflow-hidden"
-          placeholder="Type a message..."
+          className="chatbot-input pl-12"
+          placeholder="Type a message or click the mic to speak..."
           value={message}
           onChange={handleTextareaChange}
           onKeyDown={handleKeyDown}
